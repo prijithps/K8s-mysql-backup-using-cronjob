@@ -1,0 +1,122 @@
+Here’s a curated list of **Kubernetes (K8s) interview questions** focused on **Taints and Tolerations**, ranging from basic to advanced, so you can be ready for DevOps/SRE-level interviews.
+
+---
+
+## **Basic Questions**
+
+1. **What are taints in Kubernetes?**
+
+   * Definition: A taint is a key-value pair applied to a node to prevent certain pods from scheduling there unless those pods tolerate the taint.
+
+2. **What is a toleration in Kubernetes?**
+
+   * Definition: A toleration is applied to a pod to allow it to be scheduled on nodes with matching taints.
+
+3. **Why do we use taints and tolerations?**
+
+   * Purpose: To control pod placement and ensure workloads run only on suitable nodes.
+
+4. **What is the difference between taints/tolerations and nodeSelector/affinity?**
+
+   * Key difference:
+
+     * **Taints/tolerations** → repel pods unless tolerated.
+     * **nodeSelector/nodeAffinity** → attract pods to certain nodes.
+
+5. **How do you add a taint to a node?**
+
+   * Command:
+
+     ```bash
+     kubectl taint nodes <node-name> key=value:NoSchedule
+     ```
+
+6. **How do you remove a taint from a node?**
+
+   * Command:
+
+     ```bash
+     kubectl taint nodes <node-name> key:NoSchedule-
+     ```
+
+---
+
+## **Intermediate Questions**
+
+7. **What are the three main taint effects in Kubernetes?**
+
+   * `NoSchedule` → New pods won’t be scheduled unless tolerated.
+   * `PreferNoSchedule` → Try to avoid scheduling unless no other choice.
+   * `NoExecute` → Evicts existing pods and prevents new scheduling.
+
+8. **What happens if a pod doesn’t have a matching toleration for a tainted node?**
+
+   * It will not be scheduled on that node.
+
+9. **How do taints and tolerations work together in scheduling decisions?**
+
+   * The scheduler checks if a node has taints and if the pod tolerates them. If not tolerated, it won't be scheduled.
+
+10. **Can a pod tolerate multiple taints?**
+
+    * Yes. You can specify multiple tolerations in the pod spec.
+
+11. **What is the default behavior for control-plane (master) nodes?**
+
+    * Control-plane nodes are tainted with:
+
+      ```
+      node-role.kubernetes.io/control-plane:NoSchedule
+      ```
+
+      to prevent workload pods from running there.
+
+---
+
+## **Advanced / Scenario-based Questions**
+
+12. **You have a node tainted with `gpu=true:NoSchedule`. How will you make only GPU workloads run there?**
+
+    * Apply a toleration to GPU pods:
+
+      ```yaml
+      tolerations:
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      ```
+
+      Also use `nodeSelector` or `nodeAffinity` for strict targeting.
+
+13. **A pod is running on a node with a `NoExecute` taint but doesn’t have a toleration. What happens?**
+
+    * The pod will be evicted immediately.
+
+14. **What is the difference between `tolerationSeconds` and `effect: NoExecute`?**
+
+    * `tolerationSeconds` specifies how long a pod can stay on a node with a `NoExecute` taint before being evicted.
+
+15. **How can taints and tolerations be used for node maintenance?**
+
+    * Taint the node with:
+
+      ```bash
+      kubectl taint node <node-name> maintenance=true:NoExecute
+      ```
+
+      This will evict workloads (unless tolerated) and prevent new scheduling.
+
+16. **What happens if a node has multiple taints and a pod tolerates only one of them?**
+
+    * The pod will still not schedule because **all taints must be tolerated**.
+
+17. **How would you isolate workloads for security reasons using taints?**
+
+    * Apply taints to sensitive nodes (e.g., `secure=true:NoSchedule`) and give tolerations only to trusted workloads.
+
+18. **Explain how taints interact with PriorityClass in scheduling.**
+
+    * Taints always repel non-tolerating pods regardless of priority, but `PriorityClass` affects eviction order if resources are tight.
+
+---
